@@ -1,0 +1,12 @@
+{
+  "station_id": "S77",
+  "prediction_time": "2024-01-01T01:00:00+08:00",
+  "result": {
+    "status": "available",
+    "probability": 0.018935042135388436,
+    "threshold_mm": 5.0,
+    "evaluated_threshold": true,
+    "known_training_station": true,
+    "time_semantics": "next six recorded five-minute observations"
+  }
+}

@@ -1,0 +1,15 @@
+.venv/
+.venv-wsl/
+__pycache__/
+.pytest_cache/
+/code/data/
+smoke/
+logs/
+*.log
+*.crc
+*.tmp
+*.zip
+code/artifacts/matplotlib_cache/
+code/artifacts/qa_*
+code/artifacts/report_preview*
+.DS_Store

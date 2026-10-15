@@ -1,0 +1,10 @@
+{
+  "train": {
+    "returncode": 0,
+    "seconds": 1535.8735084533691
+  },
+  "report": {
+    "returncode": 0,
+    "seconds": 26.803680419921875
+  }
+}

@@ -1,0 +1,9 @@
+pyspark==3.5.3
+requests>=2.32
+matplotlib>=3.9
+reportlab>=4.2
+psutil>=6
+pytest>=8
+jdk4py==11.0.13.1
+setuptools>=70
+pandas>=2.2

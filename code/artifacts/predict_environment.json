@@ -1,0 +1,11 @@
+{
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "spark": "3.5.3",
+  "platform": "Linux-6.18.33.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "logical_cpus": 10,
+  "ram_bytes": 10428227584,
+  "master": "local[2]",
+  "driver_memory": "1g",
+  "shuffle_partitions": "16",
+  "java": "11.0.13"
+}

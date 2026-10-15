@@ -1,0 +1,44 @@
+{
+  "kind": "gbt",
+  "params": {
+    "maxIter": 60,
+    "maxDepth": 5
+  },
+  "level": 2,
+  "thresholds": [
+    0.0,
+    1.0,
+    5.0,
+    10.0
+  ],
+  "training_stride_minutes": 30,
+  "evaluation_stride_minutes": 30,
+  "quick_debug_run": false,
+  "training_fraction": 0.1,
+  "origin_sampling": "xxhash64(station_id,timestamp,42), mod 10000",
+  "feature_inputs": [
+    "station_vector",
+    "latitude",
+    "longitude",
+    "hour_sin",
+    "hour_cos",
+    "day_sin",
+    "day_cos",
+    "threshold_mm",
+    "rain",
+    "lag_1",
+    "lag_2",
+    "lag_3",
+    "lag_4",
+    "lag_5",
+    "lag_6",
+    "sum_15",
+    "sum_30",
+    "sum_60",
+    "max_60",
+    "wet_60",
+    "trend_15"
+  ],
+  "time_zone": "Asia/Singapore",
+  "target": "sum at t+5,t+10,t+15,t+20,t+25,t+30 minutes; strictly greater than threshold"
+}
