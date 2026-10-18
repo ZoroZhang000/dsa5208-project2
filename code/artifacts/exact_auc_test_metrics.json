@@ -1,0 +1,131 @@
+{
+  "description": "Exact ROC-AUC and PR-AUC (numBins=0) of a saved model on the main test split. Supplements the original pipeline outputs; no model was retrained.",
+  "model": {
+    "path": "artifacts/best_model",
+    "sha256_of_files": "28e223931aeb2ac3ea134259fd421b7ee72129a29a7d14df5af5f612fd41530a",
+    "files_hashed": 22,
+    "config": {
+      "kind": "gbt",
+      "params": {
+        "maxIter": 60,
+        "maxDepth": 5
+      },
+      "level": 2,
+      "thresholds": [
+        0.0,
+        1.0,
+        5.0,
+        10.0
+      ],
+      "training_stride_minutes": 30,
+      "evaluation_stride_minutes": 30,
+      "quick_debug_run": false,
+      "training_fraction": 0.1,
+      "origin_sampling": "xxhash64(station_id,timestamp,42), mod 10000",
+      "feature_inputs": [
+        "station_vector",
+        "latitude",
+        "longitude",
+        "hour_sin",
+        "hour_cos",
+        "day_sin",
+        "day_cos",
+        "threshold_mm",
+        "rain",
+        "lag_1",
+        "lag_2",
+        "lag_3",
+        "lag_4",
+        "lag_5",
+        "lag_6",
+        "sum_15",
+        "sum_30",
+        "sum_60",
+        "max_60",
+        "wet_60",
+        "trend_15"
+      ],
+      "time_zone": "Asia/Singapore",
+      "target": "sum at t+5,t+10,t+15,t+20,t+25,t+30 minutes; strictly greater than threshold"
+    }
+  },
+  "data": {
+    "path": "/Users/leon.qian/Desktop/DSA5208/tmp/report_review/rerun/data/windows",
+    "table": "complete windows (12 past and 6 future five-minute readings)",
+    "sha256_of_files": "edfd8c96c75cf99cec8500b519e198b95dad83742b225412fe68e4a5ecb1a92d",
+    "files_hashed": 104,
+    "bytes": 501433436,
+    "note": "Rebuilt on macOS from a fresh download of the nine NEA source files (byte counts and SHA-256 match download_manifest.json) using rainfall.py prepare/train unchanged; split counts reproduce the original run exactly."
+  },
+  "split": {
+    "name": "main test",
+    "years": [
+      2023,
+      2024
+    ],
+    "origin_interval_minutes": 30,
+    "boundary_rule": "target window must end by 2024",
+    "thresholds_mm": [
+      0.0,
+      1.0,
+      5.0,
+      10.0
+    ]
+  },
+  "evaluator": {
+    "class": "pyspark.ml.evaluation.BinaryClassificationEvaluator",
+    "rawPredictionCol": "p (probability of exceedance)",
+    "labelCol": "label",
+    "numBins": 0,
+    "metrics": {
+      "roc_auc": "areaUnderROC",
+      "pr_auc": "areaUnderPR"
+    }
+  },
+  "environment": {
+    "python": "3.11.5",
+    "spark": "3.5.3",
+    "platform": "macOS-26.7.1-x86_64-i386-64bit",
+    "generated_utc": "2026-10-18T09:37:07+00:00",
+    "seconds": 62.7
+  },
+  "per_threshold": [
+    {
+      "threshold_mm": 0.0,
+      "n": 2170886,
+      "positive_rate": 0.0652659789597427,
+      "brier": 0.03282896564830066,
+      "roc_auc": 0.8904156120164394,
+      "pr_auc": 0.6788441051757151
+    },
+    {
+      "threshold_mm": 1.0,
+      "n": 2170886,
+      "positive_rate": 0.026039137937229315,
+      "brier": 0.015425084590200979,
+      "roc_auc": 0.9086760463074625,
+      "pr_auc": 0.581206766954129
+    },
+    {
+      "threshold_mm": 5.0,
+      "n": 2170886,
+      "positive_rate": 0.00856885161173825,
+      "brier": 0.006577415104615822,
+      "roc_auc": 0.9015100995204316,
+      "pr_auc": 0.37379151247276887
+    },
+    {
+      "threshold_mm": 10.0,
+      "n": 2170886,
+      "positive_rate": 0.003988233375681634,
+      "brier": 0.0035895808109639537,
+      "roc_auc": 0.9102654390146043,
+      "pr_auc": 0.25012439126580543
+    }
+  ],
+  "comparison": {
+    "file": "artifacts/test_metrics.json",
+    "same_counts": true,
+    "max_brier_difference": 5.48172618408671e-16
+  }
+}
