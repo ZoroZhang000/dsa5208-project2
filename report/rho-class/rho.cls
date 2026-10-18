@@ -561,8 +561,8 @@
 	style=ieee,
 	sorting=ynt,
 	citestyle=numeric-comp,
-    maxbibnames=99,    % 添加这一行，确保参考文献列表显示所有作者
-	minbibnames=1      % 配合使用，确保不进行缩略
+    maxbibnames=99,    % Added so the bibliography lists every author
+	minbibnames=1      % Used together with the line above so author lists are never abbreviated
 ]{biblatex}
 \renewcommand*{\bibfont}{\fontsize{9pt}{10pt}\selectfont}
 \addbibresource{rho.bib}
