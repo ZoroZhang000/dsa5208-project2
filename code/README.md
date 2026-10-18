@@ -42,6 +42,18 @@ Important definitions: the past 60 minutes include 12 readings at t-55,...,t; la
 
 The validation Brier score selects the model; parameters are frozen before test evaluation. Ablations reuse the winning model family and hyperparameters. Classification cutoffs maximize validation F1 on 0.05,...,0.95; ties select the smaller cutoff. ROC/PR AUC are undefined for single-class subsets. Probabilities are evaluated without class reweighting or calibration fitting. Seasonal baseline falls back to training global frequency for unseen station/month cells. Threshold monotonicity violations are reported, not repaired.
 
+## Exact AUC (separate evaluation)
+
+`rainfall.metrics` computes ROC-AUC and PR-AUC with Spark's `BinaryClassificationEvaluator` at its default `numBins=1000`, which downsamples the curves before integrating them; those approximate values are what `artifacts/test_metrics.json` contains. The report's per-threshold table instead uses exact values from a separate evaluation of the same saved model on the same main test split, produced by `exact_auc.py` with `numBins=0`. This step does not retrain anything and does not modify `rainfall.py` or the original outputs.
+
+After `train` has written `data/windows` in the workspace, run from this directory:
+
+```bash
+python exact_auc.py --model artifacts/best_model --windows data/windows --output artifacts/exact_auc_test_metrics.json --compare artifacts/test_metrics.json
+```
+
+The output records the model's file hash and configuration, the windows table's hash, the split, thresholds and evaluator settings, per-threshold counts, positive rates, Brier scores and exact AUCs, and a comparison confirming that the same examples as `test_metrics.json` were scored. The committed `artifacts/exact_auc_test_metrics.json` evaluates the original submitted model; its windows table was rebuilt on macOS from a fresh download whose byte counts and SHA-256 checksums match `download_manifest.json`.
+
 The fixed-ID panel includes stations having qualifying days in every year; it controls changing station IDs but not missing observation days. Annual valid-day counts remain essential. The additional strict panel requires 95% full-year coverage in every year; if empty, its unavailability is explicitly reported.
 
 Do not report fixture/debug results as real-data results. The report generator marks absent results NOT RUN. Review figures and add your discussion before submission. AI assistance must be declared.
