@@ -17,9 +17,9 @@
 % Title
 %----------------------------------------------------------
 
-\title{DSA5208 Project 2 Report : Scalable Rainfall Forecasting with Apache Spark}
+\title{DSA5208 Project 2 Report : Singapore Rainfall Analysis and Prediction}
 
-\author{\textbf{Group Members: }Yan Yixin, Zhang Yue, Leon Yiliang Qian}
+\author{\textbf{Group Members: }Yan Yixin (A0327039A), Zhang Yue (A0333668U), Leon Yiliang Qian (A0355825W)}
 
 %----------------------------------------------------------
 % Abstract and Keywords
@@ -37,7 +37,7 @@
 %----------------------------------------------------------
 \makeatletter
 % Running head: project title on every page that carries one
-\fancyhead[RO,LE]{\footerfont Scalable Rainfall Forecasting with Apache Spark}
+\fancyhead[RO,LE]{\footerfont Singapore Rainfall Analysis and Prediction}
 \fancyhead[RE,LO]{}
 \fancyfoot[C]{\footerfont\thepage/\pageref{LastPage}}
 \fancypagestyle{firststyle}{
@@ -64,21 +64,21 @@
 
 %----------------------------------------------------------
 
-\noindent\textbf{Submitted material.} The Spark pipeline, the trained model, the generated metric files and the figures reproduced here are submitted together with this report. \textbf{Brief instructions for reproducing the main experiments are given in the accompanying \texttt{README.md}}, which documents the environment, the staged workflow and the controls applied to the experiment runner.
+\noindent\textbf{Submission Overview.} The Spark pipeline, the trained model, the generated metric files and the figures reproduced here are submitted together with this report. Brief instructions for reproducing the main experiments are given in the accompanying \texttt{README.md}, which documents the environment, the staged workflow and the controls applied to the experiment runner.
 
 \section{Introduction}
 \rhostart{R}ainfall in Singapore is convective, highly localised and fast moving, so a station can pass from dry to heavy rain within a few five-minute intervals. This project asks a question an operational user would ask: given everything observed at a station up to the present moment, what is the probability that the next thirty minutes will accumulate more than a given amount of rain?
 
-We treat this as a probabilistic classification problem over eight years of national observations, built end to end on Apache Spark~\cite{Lecture4}. The work has two halves. The first is an exploratory study of the observation network itself: how complete it is, how rainfall is distributed across months and hours, and which apparent extremes survive scrutiny. The second is a supervised forecasting experiment that compares three MLlib model families against two frequency baselines, selects a model chronologically, and then measures it once on held-out years.
+We treat this as a probabilistic classification problem over eight years of national observations, built end to end on Apache Spark~\cite{Lecture4}. The work has two halves. The first is an exploratory study of the observation network itself: how complete it is, how rainfall is distributed across months and hours, how those patterns change from 2017 to 2024, and which apparent extremes survive scrutiny. The second is a supervised forecasting experiment that compares three MLlib model families against two frequency baselines, selects a model chronologically, and then measures it once on held-out years.
 
-Two commitments shape the whole report. Evaluation is strictly chronological, so no future observation of any kind informs a model that is scored on it. And every quantity reported here is read back from a generated metric file rather than transcribed by hand, so the tables and the experiment cannot drift apart.
+Our main findings are that rainfall varies strongly from year to year without a consistent trend, with 2019 markedly dry because it had fewer wet days; that gradient-boosted trees reduce the macro Brier score by 40.92\,\% relative to a frequency baseline on the held-out years 2023--2024; and that almost all of this gain comes from the station's current and recent rainfall rather than from its location or the season. Evaluation is strictly chronological throughout, and every number in this report is read from the generated metric files of the reported run rather than transcribed by hand.
 
 \section{Data and Computing Environment}
 
 \subsection{Data Source and Cleaning}
 We use the NEA historical rainfall collection published through data.gov.sg~\cite{NEARainfall}, covering 2017 through 2024. Each record carries an observation timestamp, a station identifier, station metadata, coordinates, and a five-minute rainfall total in millimetres. The publisher states that timestamps are Singapore Time, that records may be missing, and that the series has not undergone climate-data quality control. We therefore treat the data as observations, not as a validated climate product.
 
-All processing uses Spark DataFrames~\cite{Lecture4,Lecture5}. Exact semantic duplicates are removed. Where two records disagree for the same station and timestamp, both are excluded rather than arbitrarily resolved. Negative, non-finite, unparseable, geographically invalid and off-grid observations are excluded. Early timestamps falling within one second of the five-minute grid are aligned and audited rather than discarded.
+All processing uses Spark DataFrames~\cite{Lecture4,Lecture5}. Exact semantic duplicates are removed. Where two records disagree for the same station and timestamp, both are excluded rather than arbitrarily resolved. Negative, non-finite, unparseable, geographically invalid and off-grid observations are excluded. Early timestamps falling within one second of the five-minute grid are aligned and audited rather than discarded. Table~\ref{tab:audit} gives the resulting record counts by year.
 
 Two cleaning decisions matter for interpretation. Missing observations are never treated as zero rainfall, because an absent reading and a dry reading are different claims. And five-minute values above 50\,mm are retained and flagged rather than removed: that threshold is an engineering audit rule, not a meteorological limit, so silently deleting such values would discard precisely the extremes the study is interested in.
 
@@ -106,7 +106,7 @@ Two cleaning decisions matter for interpretation. Missing observations are never
 \end{table}
 
 \subsection{Computing Environment}
-The reported run was executed on a single machine under WSL2, with Spark in local mode. The configuration is deliberately modest: the point of the exercise is a pipeline that scales by partitioning, not one that depends on a large cluster.
+The reported run was executed on a single machine under WSL2, with Spark in local mode. The configuration is deliberately modest: the point of the exercise is a pipeline that scales by partitioning, not one that depends on a large cluster. Table~\ref{tab:env} lists the configuration.
 
 \begin{table}[H]
 \caption{Spark runtime configuration for the reported run.}
@@ -134,23 +134,41 @@ RAM & 10.4\,GB \\
 Preparation, which includes cleaning and all exploratory aggregation, took 653.6\,s. Training, which includes the full model comparison and the ablation, took 1517.2\,s.
 
 \subsection{Installation and Reproduction}
-The pipeline runs in three stages, \texttt{prepare}, \texttt{train} and \texttt{report}, each invoked through \texttt{run\_experiments.py} and each writing its own log. Raw data, intermediate Parquet and the virtual environment are excluded from version control and are regenerated by the download and preparation commands. The run identifier and the sampling seed are recorded with the outputs, so a later run can be compared against this one rather than silently replacing it.
+The pipeline runs in three stages, \texttt{prepare}, \texttt{train} and \texttt{report}, each writing its own log. From the \texttt{code} directory, with \texttt{SPARK\_MASTER=local[6]} set for the Spark stages, it is reproduced with:
+\begin{itemize}[topsep=0pt, itemsep=0pt]
+\item \texttt{pip install -r requirements.lock.txt}: install the pinned dependencies in a virtual environment.
+\item \texttt{pytest tests -q}: run the eight automated tests.
+\item \texttt{rainfall.py download}: download the 2017--2024 NEA files.
+\item \texttt{rainfall.py prepare}: clean the data and compute the exploratory aggregates.
+\item \texttt{run\_experiments.py -{}-from-stage train -{}-training-fraction 0.1}: train, select and evaluate the models, then generate the tables and figures.
+\item \texttt{rainfall.py predict}: answer a single query (Section~\ref{sec:task}).
+\end{itemize}
+Raw data, intermediate Parquet and the virtual environment are excluded from version control and are regenerated by the download and preparation commands. The run identifier and the sampling seed are recorded with the outputs, so a later run can be compared against this one rather than silently replacing it.
 
 \section{Prediction Task and Protocol}
+\label{sec:task}
+
+The model answers the query posed by the task. Given a station identifier, a prediction time and a rainfall threshold, it returns the probability that the station accumulates more than that threshold over the following thirty minutes. The station's observations up to the prediction time are retrieved internally to build the features, so the caller supplies only these three inputs. For example,
+\begin{center}\footnotesize
+\texttt{rainfall.py predict -{}-station S77}\\
+\texttt{-{}-time 2024-01-01T01:00:00+08:00}\\
+\texttt{-{}-threshold 5}
+\end{center}
+returns a probability of 0.019 that station S77 records more than 5\,mm between 01:00 and 01:30 SGT on 1 January 2024.
 
 \subsection{Target Definition}
 For station $s$ and prediction origin $t$, the target is the total rainfall over the next thirty minutes,
 \[R_{30}(s,t)=\sum_{k=1}^{6}r(s,t+5k\text{ min}),\qquad y(s,t,a)=\mathbf{1}[R_{30}(s,t)>a],\]
-with strict exceedance of threshold $a$. Four thresholds are used: 0, 1, 5 and 10\,mm.
+with strict exceedance of threshold $a$. Four thresholds are used: 0, 1, 5 and 10\,mm. These are experimental settings, not official warning levels.
 
-One honest caveat belongs here rather than in the limitations. The published reading type confirms a five-minute total, but the collection does not state whether a timestamp marks the start or the end of its accumulation interval. The target is therefore defined over the next six \emph{recorded} observations; the physical interval-end reading is an assumption we cannot verify from the data.
+One caveat concerns the timestamps. The published reading type confirms a five-minute total, but the collection does not state whether a timestamp marks the start or the end of its accumulation interval. The target is therefore defined over the next six \emph{recorded} observations; the physical interval-end reading is an assumption we cannot verify from the data.
 
 \subsection{Splits and Sampling}
 Training uses 2017--2021, validation uses 2022, and testing uses 2023--2024. Targets that would cross a split boundary are excluded, so no example is partly built from a neighbouring period. A complete example requires twelve past readings from $t-55$ to $t$ and six future readings from $t+5$ to $t+30$. No future observation enters any feature. Encoders, standardisation and baseline probabilities are fitted on training data only.
 
 Of 48\,538\,625 cleaned readings, 47\,048\,853 yield a complete window; window completeness therefore excludes 3.07\,\% of candidate origins.
 
-To keep local computation tractable, training origins are taken every thirty minutes and then sampled uniformly at 10\,\% using a stable hash of station and timestamp with seed 42. The sampling is deliberately origin-level rather than example-level: all four threshold examples derived from a retained origin stay together, so the threshold feature is never correlated with sampling. Validation and testing retain every complete origin, and no class-dependent sampling or reweighting is applied anywhere.
+To keep local computation tractable, training origins are taken every thirty minutes and then sampled uniformly at 10\,\% using a stable hash of station and timestamp with seed 42. The sampling is deliberately origin-level rather than example-level: all four threshold examples derived from a retained origin stay together, so the threshold feature is never correlated with sampling. Validation and testing retain every complete origin, and no class-dependent sampling or reweighting is applied anywhere. Table~\ref{tab:splits} gives the resulting example counts.
 
 \begin{table}[H]
 \caption{Threshold-expanded example counts after completeness, boundary exclusion and training sampling.}
@@ -171,7 +189,7 @@ Test & 2023--2024 & 8\,683\,544 \\
 \end{table}
 
 \subsection{Features and Models}
-Features are grouped so that their incremental value can be measured rather than assumed.
+Features are grouped so that their incremental value can be measured rather than assumed; Table~\ref{tab:features} defines the groups.
 
 \begin{table}[H]
 \caption{Feature groups; all history ends at the prediction time.}
@@ -211,9 +229,9 @@ The primary metric is the Brier score, which rewards calibrated probabilities ra
 For classification metrics, a per-threshold probability cutoff is chosen by maximising validation F1 over 0.05 to 0.95, and then held fixed for the test set.
 
 \section{Results}
-All figures below are read from the generated metric files of the reported run. Validation covers 1\,178\,715 origins per threshold; the main test covers 2\,170\,886.
+All results come from a single complete run of the staged pipeline on the full 2017--2024 data, and every number below is read from that run's generated metric files. Validation covers 1\,178\,715 origins per threshold; the main test covers 2\,170\,886.
 
-\subsection{Exploratory Analysis}
+\subsection{Exploratory Analysis: Within a Year}
 A station-day enters the daily statistics only when at least 95\,\% of its 288 expected intervals are observed. Annual sums therefore cover qualifying days and are not complete climatological totals.
 
 Across qualifying station-days, November has the highest mean daily rainfall at 10.54\,mm and July the lowest at 5.05\,mm. The maximum wet-interval fraction by month and hour is 0.104, in November at 15:00 SGT, consistent with a convective afternoon peak (Figure~\ref{fig:monthhour}).
@@ -268,8 +286,58 @@ S113 & 2023-02-28 & 194.2 & 1.000 \\
 \label{fig:annualmean}
 \end{figure}
 
+\subsection{Exploratory Analysis: Changes Across 2017--2024}
+Table~\ref{tab:yearly} summarises each year. Three features stand out.
+
+\begin{table}[H]
+\caption{Rainfall characteristics by year, all stations.}
+\label{tab:yearly}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Year} & \textbf{Stations} & \textbf{mm/day} & \textbf{Wet days} & \textbf{Intensity} & \textbf{P99} \\
+\midrule
+2017 & 59 & 6.59 & 57.2\,\% & 0.83 & 64.4 \\
+2018 & 56 & 7.45 & 60.5\,\% & 0.87 & 65.6 \\
+2019 & 54 & \textbf{4.69} & \textbf{39.8\,\%} & 0.85 & 58.6 \\
+2020 & 80 & 7.55 & 59.1\,\% & 0.86 & 67.0 \\
+2021 & 72 & 7.89 & 52.8\,\% & \textbf{0.91} & \textbf{82.2} \\
+2022 & 72 & 8.06 & 60.5\,\% & 0.90 & 70.2 \\
+2023 & 73 & 7.78 & 55.0\,\% & 0.85 & 74.0 \\
+2024 & 70 & 7.44 & 56.7\,\% & 0.85 & 69.4 \\
+\bottomrule
+\end{tabular}
+\tabletext{Note: mm/day, wet days and P99 use qualifying station-days (at least 95\,\% of intervals observed). mm/day is mean rainfall per station-day; wet days is the share of station-days with positive rainfall; P99 is the 99th percentile of station-day totals in mm. Intensity is mean rainfall per positive five-minute interval, in mm. Stations counts those with at least one qualifying day.}
+\end{table}
+
+\paragraph{No consistent trend.} From 2020 to 2024 the mean rainfall per qualifying station-day stays between 7.44 and 8.06\,mm with no consistent direction (Figure~\ref{fig:annualmean}). Eight years are in any case too short to separate a trend from ordinary year-to-year variability.
+
+\paragraph{A dry 2019.} 2019 was markedly dry, through fewer wet days rather than lighter rain. Its mean of 4.69\,mm per station-day is about 39\,\% below the 2020--2024 average of 7.74\,mm. The share of wet station-days fell to 39.8\,\%, against 52.8--60.5\,\% in every other year (Figure~\ref{fig:wetdays}), while the intensity of the rain that did fall, 0.85\,mm per wet five-minute interval, was typical. The deficit was one of frequency, not intensity.
+
+\paragraph{Heavier rain in 2021--2022.} These two years brought the heaviest rain. They have the highest wet-interval intensities, 0.91 and 0.90\,mm, the largest 99th-percentile station-day total (82.2\,mm in 2021) and the largest single five-minute reading (37.2\,mm in 2022). Their mean daily rainfall is close to that of neighbouring years, so the rain was heavier when it fell rather than more frequent.
+
+\paragraph{A shifting seasonal cycle.} The seasonal cycle itself changes between years (Figure~\ref{fig:monthly}). In six of the eight years, the November, December and January months of the calendar year are wetter than June to August, consistent with the November peak above. In 2020 and 2021 the order reverses: June to August averages 8.58 and 8.91\,mm per station-day, against 7.67 and 8.11\,mm for November to January. The single wettest month falls in six different months across the eight years, and August 2018 averaged only 0.54\,mm per station-day. The November peak in the pooled data is therefore an average over years whose individual cycles differ considerably.
+
+\paragraph{Changing network.} The number of stations with qualifying days rises from 54 in 2019 to 80 in 2020. To check that the yearly differences are not an artefact of a changing network, we repeated the calculation on the 37-station common-identifier panel. It tracks the all-station series to within 0.26\,mm per station-day in every year and reproduces the 2019 anomaly, at 4.67\,mm and 39.8\,\% wet days, so the conclusions above are not driven by network growth. They describe what was observed; these data alone cannot attribute the differences to particular climate drivers.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{monthly_rain.png}
+\caption{Mean rainfall per qualifying station-day by year and month. The timing of the wettest months differs from year to year.}
+\label{fig:monthly}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{annual_wet_days.png}
+\caption{Mean station wet-day fraction among qualifying days, by year. The 2019 dip is the clearest year-to-year change in the record.}
+\label{fig:wetdays}
+\end{figure}
+
 \subsection{Model Selection}
-Table~\ref{tab:selection} gives the full comparison. The ordering is clean and unsurprising: logistic regression is worst and degrades monotonically with regularisation; random forest improves with depth rather than with tree count; gradient boosting wins throughout.
+Table~\ref{tab:selection} gives the full comparison. The ordering is consistent across families: logistic regression is worst and degrades monotonically with regularisation; random forest improves with depth rather than with tree count; gradient boosting wins throughout.
 
 \begin{table}[H]
 \caption{Chronological validation selection; lower Brier is better.}
@@ -318,11 +386,30 @@ GBT, selected & \textbf{0.01461} & $-40.92\,\%$ \\
 \tabletext{Note: negative denotes improvement. Each threshold contributes 2\,170\,886 test examples.}
 \end{table}
 
-The selected model improves on B0 by 40.92\,\%. The more interesting result is B1: adding station and month structure to the baseline does \emph{not} help, scoring marginally worse than B0 at 0.02476 against 0.02472. Seasonal and spatial climatology alone is close to worthless for a thirty-minute horizon. What matters is the current state of the atmosphere at that station, which is exactly what the ablation below confirms.
+\begin{table}[H]
+\caption{Selected model by threshold, main test origins.}
+\label{tab:perthreshold}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{mm} & \textbf{Positive} & \textbf{Brier} & \textbf{Log loss} & \textbf{PR-AUC} & \textbf{ROC-AUC} \\
+\midrule
+0 & 6.53\,\% & 0.03283 & 0.1351 & 0.680 & 0.888 \\
+1 & 2.60\,\% & 0.01543 & 0.0740 & 0.587 & 0.856 \\
+5 & 0.86\,\% & 0.00658 & 0.0419 & 0.376 & 0.887 \\
+10 & 0.40\,\% & 0.00359 & 0.0309 & 0.250 & 0.887 \\
+\bottomrule
+\end{tabular}
+\tabletext{Note: 2\,170\,886 test origins per threshold. Positive is the share of origins that exceed the threshold.}
+\end{table}
 
-Per-threshold behaviour is reported in full in the generated metrics. The pattern is that Brier falls with the threshold simply because exceedance becomes rarer, while PR-AUC falls too, from 0.680 at 0\,mm to 0.250 at 10\,mm. Rare heavy rain remains much harder to anticipate than any aggregate score suggests.
+The selected model improves on B0 by 40.92\,\% (Table~\ref{tab:test}). B1 gives the more informative result: adding station and month structure to the baseline does \emph{not} help, scoring marginally worse than B0 at 0.02476 against 0.02472. Station and month frequencies alone therefore carry almost no information about the next thirty minutes. What matters is the recent rainfall at the station, as the ablation below confirms.
 
-An additional evaluation retains every complete five-minute origin rather than every thirtieth minute, giving 13\,025\,429 origins per threshold and a macro Brier of 0.01460. That the two agree to four decimal places indicates the thirty-minute evaluation stride is not flattering the result. Figures~\ref{fig:calib30} and~\ref{fig:calib5} show the corresponding reliability curves.
+Table~\ref{tab:perthreshold} breaks the selected model down by threshold. Brier falls with the threshold simply because exceedance becomes rarer, while PR-AUC falls too, from 0.680 at 0\,mm to 0.250 at 10\,mm. ROC-AUC, by contrast, stays between 0.856 and 0.888 at every threshold, which is why PR-AUC is the more informative guide for rare events. Heavy rain is therefore much harder to anticipate than the macro score alone suggests.
+
+An additional evaluation retains every complete five-minute origin rather than every thirtieth minute, giving 13\,025\,429 origins per threshold and a macro Brier of 0.01460. The two scores agree to four decimal places, so the thirty-minute evaluation stride does not flatter the result. The two test years also behave similarly: at 0\,mm the Brier score is 0.03306 in 2023 and 0.03259 in 2024. Figures~\ref{fig:calib30} and~\ref{fig:calib5} show the corresponding reliability curves.
 
 \begin{figure}[H]
 \centering
@@ -357,11 +444,13 @@ F2 & 0.01474 & 0.01461 \\
 \tabletext{Note: macro Brier. Family and hyperparameters are frozen at the selected GBT configuration, so differences reflect features alone.}
 \end{table}
 
-This is the clearest result in the study. F0 — station, location, time of day and season, with no rainfall history — scores 0.02441, essentially the baseline level. Adding the current reading and six lags takes it to 0.01480, capturing almost the entire gain. Rolling summaries add a further, much smaller improvement to 0.01461.
+This is the clearest result in the study (Table~\ref{tab:ablation}). F0 (station, location, time of day and season, with no rainfall history) scores 0.02441, essentially the baseline level. Adding the current reading and six lags takes it to 0.01480, capturing almost the entire gain. Rolling summaries add a further, much smaller improvement to 0.01461.
 
-In other words, nearly all predictive power comes from knowing whether it is raining right now and how hard. Where and when the station is contributes almost nothing on this horizon.
+In other words, nearly all of the predictive power comes from whether it is raining at the station now, and how hard. Location and time of year add very little on this horizon.
 
 \subsection{Operating Points and Subgroups}
+Table~\ref{tab:classification} converts the probabilities into yes/no forecasts at validation-selected cutoffs.
+
 \begin{table}[H]
 \caption{Test classification at validation-selected cutoffs.}
 \label{tab:classification}
@@ -381,7 +470,7 @@ In other words, nearly all predictive power comes from knowing whether it is rai
 \tabletext{Note: cutoffs maximise validation F1 and are then held fixed. They fall as the threshold rises, which is what a well-calibrated model should require for rarer events.}
 \end{table}
 
-Conditioning on current state is revealing. Among origins that are currently dry, the model scores 0.0307 at 0\,mm; among origins that are currently wet, it scores 0.0975, with a positive rate of 0.856. The wet subgroup is both much rarer and much harder: once rain has started, predicting whether it continues past a threshold is a genuinely uncertain problem, whereas predicting that dry weather persists is comparatively easy. An aggregate score conceals this, which is why the subgroup breakdown is reported.
+The results also differ by current state. Among origins that are currently dry, the model scores 0.0307 at 0\,mm; among origins that are currently wet, it scores 0.0975, with a positive rate of 0.856. The wet subgroup is both much rarer and much harder: once rain has started, predicting whether it continues past a threshold is hard, whereas predicting that dry weather persists is comparatively easy. Differences in Brier between subgroups also reflect their different event rates, so they are not a pure ranking of difficulty.
 
 Threshold monotonicity, though not enforced, is almost always respected: the probability rises with the threshold in only 1.0 in 10\,000 examples, on both evaluation strides.
 
@@ -393,7 +482,7 @@ Finally, the saved pipeline was reloaded and scored on 20 probe examples, matchi
 \subsection{What the Results Support}
 Three findings are supported by the evidence and are robust to how the evaluation is sliced.
 
-First, short-horizon rainfall exceedance is dominated by persistence. The ablation isolates this cleanly: 98\,\% of the improvement over F0 comes from adding current rainfall and its lags, before any rolling summary is computed. The corollary is that B1 fails — seasonal and spatial frequency, which looks informative in the exploratory analysis, carries almost no thirty-minute predictive signal.
+First, short-horizon rainfall exceedance is dominated by persistence. The ablation isolates this cleanly: 98\,\% of the improvement over F0 comes from adding current rainfall and its lags, before any rolling summary is computed. This is also why B1 fails: seasonal and spatial frequency, which looks informative in the exploratory analysis, carries almost no thirty-minute predictive signal.
 
 Second, the gain over a frequency baseline is real but bounded. A 40.9\,\% reduction in Brier score is substantial, yet at the 10\,mm threshold precision is 0.373 and PR-AUC is 0.250. The model is useful for ranking risk, not for issuing categorical warnings about heavy rain.
 
@@ -407,6 +496,7 @@ Nor can it claim operational readiness. Predictions assume every observation thr
 Finally, the extremes in Table~\ref{tab:extremes} are observations, not validated records. The 786.6\,mm station-day is reported because suppressing it would be worse, not because we are asserting it occurred.
 
 \subsection{Limitations}
+\label{sec:limitations}
 \begin{itemize}[topsep=0pt, itemsep=0pt]
 \item \textbf{Completeness bias.} Missingness and the 95\,\% coverage filter can bias both the exploratory statistics and the evaluation sample, in directions that cannot be identified from these data alone.
 \item \textbf{Unvalidated extremes.} Positive outliers received an audit rule, not external quality control.
@@ -422,11 +512,13 @@ Finally, the extremes in Table~\ref{tab:extremes} are observations, not validate
 \subsection{Conclusion}
 This project built a complete Spark pipeline over 48.5 million rainfall observations and used it to forecast thirty-minute exceedance probabilities at four thresholds. Chronological selection across eleven candidates chose gradient-boosted trees at 60 iterations and depth 5, which reached a macro Brier score of 0.01461 on the held-out years 2023--2024, a 40.92\,\% improvement over a frequency baseline.
 
-The most informative result is not the winning score but the ablation. Station identity, location, hour and season together perform at baseline level; adding the current reading and six lags captures almost the entire achievable gain. On a thirty-minute horizon the atmosphere's present state is nearly sufficient, and climatology is nearly irrelevant.
+For the exploratory task, the yearly record shows variability rather than a trend. Across 2017--2024 there is no consistent rise or fall in rainfall. Instead 2019 stands out as dry, through a sharp fall in the number of wet days rather than in rain intensity, while 2021 and 2022 brought the heaviest rain. Even the seasonal cycle shifts: in 2020 and 2021 the middle of the year was wetter than its turn. These differences are robust to the changing station network, but eight years are too few to call any of them a trend.
 
-Two caveats travel with that conclusion. The seasonal baseline B1 was no better than the global baseline B0, confirming that the signal is temporal rather than spatial. And performance degrades sharply with rarity: precision falls from 0.698 at 0\,mm to 0.373 at 10\,mm, so the model ranks risk well but should not be read as a warning system for heavy rain.
+The most informative result is not the winning score but the ablation. Station identity, location, hour and season together perform at baseline level; adding the current reading and six lags captures almost the entire achievable gain. On a thirty-minute horizon, the recent rainfall at a station matters far more than its location or the season.
 
-Within the tested configuration these conclusions are well supported. They do not extend to unseen stations, to real-time operation with publication delay, or to claims about Singapore's rainfall climate.
+Two caveats travel with that conclusion. The seasonal baseline B1 was no better than the global baseline B0, so the useful signal comes from recent observations rather than from station or month averages. And performance degrades sharply with rarity: precision falls from 0.698 at 0\,mm to 0.373 at 10\,mm, so the model ranks risk well but should not be read as a warning system for heavy rain.
+
+Overall, these conclusions apply to the configuration tested: a single-machine Spark run, the existing station network and four thresholds, with the further caveats listed in Section~\ref{sec:limitations}. They do not extend to unseen stations, to real-time operation with publication delay, or to claims about long-term changes in Singapore's rainfall climate.
 
 \subsection{AI Usage Statement}
 AI assistants were used at several points in this project, and their roles differed.

@@ -11,7 +11,7 @@ Group members: Yan Yixin, Zhang Yue, Leon Yiliang Qian
 | `main.tex` | Report source |
 | `rho.bib` | Bibliography |
 | `rho-class/` | Two-column report template (`rho.cls` and its style files) |
-| `*.png` | The five figures referenced by the report |
+| `*.png` | The seven figures referenced by the report |
 
 Every number in the report is read from the metric files in `../code/artifacts/`. This folder is separate from `../code/artifacts/rainfall_report.tex`, which is the automatically generated draft.
 
