@@ -77,7 +77,7 @@ def plot_results():
         rows=table_rows(name)
         if not rows:continue
         plt.figure(figsize=(5,5));plt.plot([0,1],[0,1],'k--')
-        for a in sorted({r['threshold_mm'] for r in rows}):
+        for a in sorted({r['threshold_mm'] for r in rows},key=float):
             sub=sorted([r for r in rows if r['threshold_mm']==a],key=lambda r:int(r['bin']))
             plt.plot([float(r['mean_probability']) for r in sub],[float(r['observed_rate']) for r in sub],marker='o',label=a+' mm')
         plt.xlabel('Predicted probability');plt.ylabel('Observed frequency');plt.legend();finish(name)
