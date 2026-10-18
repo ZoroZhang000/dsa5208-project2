@@ -393,7 +393,7 @@ Finally, the saved pipeline was reloaded and scored on 20 probe examples, matchi
 \subsection{What the Results Support}
 Three findings are supported by the evidence and are robust to how the evaluation is sliced.
 
-First, short-horizon rainfall exceedance is dominated by persistence. The ablation isolates this cleanly: 96\,\% of the improvement over F0 comes from adding current rainfall and its lags, before any rolling summary is computed. The corollary is that B1 fails — seasonal and spatial frequency, which looks informative in the exploratory analysis, carries almost no thirty-minute predictive signal.
+First, short-horizon rainfall exceedance is dominated by persistence. The ablation isolates this cleanly: 98\,\% of the improvement over F0 comes from adding current rainfall and its lags, before any rolling summary is computed. The corollary is that B1 fails — seasonal and spatial frequency, which looks informative in the exploratory analysis, carries almost no thirty-minute predictive signal.
 
 Second, the gain over a frequency baseline is real but bounded. A 40.9\,\% reduction in Brier score is substantial, yet at the 10\,mm threshold precision is 0.373 and PR-AUC is 0.250. The model is useful for ranking risk, not for issuing categorical warnings about heavy rain.
 
