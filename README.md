@@ -19,7 +19,8 @@ Exploratory analysis of Singapore rainfall records from 2017–2024 using Apache
 |---|---|
 | Run instructions | [code/README.md](code/README.md) |
 | Spark data processing, training and prediction | [code/rainfall.py](code/rainfall.py) |
-| LaTeX report | [code/artifacts/rainfall_report.tex](code/artifacts/rainfall_report.tex) |
+| Written report (submitted) | [report/main.tex](report/main.tex) |
+| Auto-generated draft report (not submitted) | [code/artifacts/rainfall_report.tex](code/artifacts/rainfall_report.tex) |
 | Report figures | [code/artifacts/figures/](code/artifacts/figures/) |
 | Trained full MLlib PipelineModel | [code/artifacts/best_model/](code/artifacts/best_model/) |
 | Parameter comparison | [model_comparison.json](code/artifacts/model_comparison.json) |
@@ -49,7 +50,7 @@ The data source is [NEA Historical Rainfall across Singapore](https://data.gov.s
   --station S77 --time '2024-01-01T01:00:00+08:00' --threshold 5
 ```
 
-The report's author field is left to be filled in. When compiling the LaTeX, keep the `figures/` directory alongside the source; the source has been checked for structure and figure references but has not yet been compiled.
+The submitted report is in `report/`; see [report/README.md](report/README.md) for compile instructions. `code/artifacts/rainfall_report.tex` is the automatically generated draft and is kept for reference only.
 
 ## Data and interpretation boundaries
 
@@ -57,4 +58,4 @@ Missing observations are not filled with zero; the future window must contain si
 
 Prediction assumes the observation at time t is already available; real-time publication delay was not verified. Threshold monotonicity was checked statistically but is not enforced; generalisation to thresholds not used in training and to independent new stations was not separately verified.
 
-AI usage statement: OpenAI Codex assisted with experiment design, implementation, running, and LaTeX report generation; group members need to review the results and the report, and fill in their names and student numbers.
+AI usage is described in the AI Usage Statement section of [report/main.tex](report/main.tex).
