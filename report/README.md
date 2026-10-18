@@ -13,7 +13,7 @@ Group members: Yan Yixin, Zhang Yue, Leon Yiliang Qian
 | `rho-class/` | Two-column report template (`rho.cls` and its style files) |
 | `*.png` | The seven figures referenced by the report |
 
-Every number in the report is read from the metric files in `../code/artifacts/`. This folder is separate from `../code/artifacts/rainfall_report.tex`, which is the automatically generated draft.
+Reported numerical results were checked against the preserved outputs in `../code/artifacts/`, including the separate exact-AUC evaluation. This folder is separate from `../code/artifacts/rainfall_report.tex`, which is the automatically generated draft.
 
 ## Compiling
 
